@@ -131,3 +131,76 @@ def save_experiment_results(
     print("Results saved successfully:")
     print(runs_file)
     print(summary_file)
+
+
+
+def calculate_gap(
+    solution_cost: float,
+    reference_cost: float,
+) -> float:
+    """Calculate percentage gap from a reference solution."""
+
+    if reference_cost <= 0:
+        raise ValueError("Reference cost must be positive.")
+
+    if solution_cost < 0:
+        raise ValueError("Solution cost must be non-negative.")
+
+    return (
+        (solution_cost - reference_cost)
+        / reference_cost
+        * 100
+    )
+
+
+def save_gap_results(
+    summary_path: str = "data/results/dba_eil51_summary.csv",
+    nearest_neighbor_cost: float = 482,
+    reference_cost: float = 426,
+    output_path: str = "data/results/gap_eil51.csv",
+) -> None:
+    """Save algorithm costs and percentage gaps to CSV."""
+
+    with open(
+        summary_path,
+        "r",
+        newline="",
+        encoding="utf-8-sig",
+    ) as file:
+        reader = csv.DictReader(file)
+        summary = {
+            row["Metric"]: float(row["Value"])
+            for row in reader
+        }
+
+    rows = [
+        ("Multi-start NN", nearest_neighbor_cost),
+        ("DBA Mean", summary["mean"]),
+        ("DBA Best", summary["best"]),
+        ("Optimal Reference", reference_cost),
+    ]
+
+    output_file = Path(output_path)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with output_file.open(
+        "w",
+        newline="",
+        encoding="utf-8-sig",
+    ) as file:
+        writer = csv.writer(file)
+
+        writer.writerow([
+            "Algorithm",
+            "Cost",
+            "Gap (%)",
+        ])
+
+        for algorithm, cost in rows:
+            writer.writerow([
+                algorithm,
+                cost,
+                round(calculate_gap(cost, reference_cost), 2),
+            ])
+
+    print(f"Gap results saved to: {output_file}")
