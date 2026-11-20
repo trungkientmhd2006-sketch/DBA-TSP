@@ -1,3 +1,4 @@
+
 """Discrete Bat Algorithm for the Traveling Salesman Problem."""
 
 import math
@@ -16,7 +17,7 @@ def initialize_population(
 ) -> list[Bat]:
     """Create a random initial population of bats."""
 
-    if population_size < 1:
+    if type(population_size) is not int or population_size < 1:
         raise ValueError("Population size must be at least 1.")
 
     number_of_cities = len(distances)
@@ -28,13 +29,9 @@ def initialize_population(
     population = []
 
     for _ in range(population_size):
-        # Generate a random permutation of all cities.
         tour = rng.sample(range(number_of_cities), number_of_cities)
-
-        # Calculate the cost of this tour.
         cost = tour_length(tour, distances)
 
-        # Initialize loudness and pulse rate according to the paper.
         loudness = rng.uniform(0.7, 1.0)
         initial_pulse_rate = rng.uniform(0.0, 0.4)
 
@@ -52,7 +49,6 @@ def initialize_population(
     return population
 
 
-
 def solve_tsp(
     distances: Sequence[Sequence[float]],
     population_size: int = 50,
@@ -61,7 +57,7 @@ def solve_tsp(
 ) -> dict:
     """Optimize a TSP tour using the discrete bat algorithm."""
 
-    if iterations < 1:
+    if type(iterations) is not int or iterations < 1:
         raise ValueError("Iterations must be at least 1.")
 
     rng = random.Random(seed)
@@ -149,10 +145,6 @@ def solve_tsp(
     }
 
 
-
-
-
-
 def calculate_velocity(
     tour: Sequence[int],
     best_tour: Sequence[int],
@@ -162,12 +154,10 @@ def calculate_velocity(
 
     distance = hamming_distance(tour, best_tour)
 
-    # The bat already has the same tour as the global best.
     if distance == 0:
         return 0
 
     return rng.randint(1, distance)
-
 
 
 def move_bat(
@@ -193,20 +183,16 @@ def move_bat(
         raise ValueError("A 2-opt move requires at least 3 cities.")
 
     for _ in range(velocity):
-        # Randomly select two different positions.
         i, j = sorted(rng.sample(range(number_of_cities), 2))
 
-        # Generate one 2-opt neighbor from the original tour.
         candidate = two_opt(tour, i, j)
         candidate_cost = tour_length(candidate, distances)
 
-        # Keep the best neighbor.
         if candidate_cost < best_cost:
             best_tour = candidate
             best_cost = candidate_cost
 
     return best_tour, best_cost
-
 
 
 def local_search(
@@ -240,7 +226,11 @@ def local_search(
             candidate_cost = selected_bat.cost + delta
 
             if candidate_cost < best_cost:
-                best_tour = two_opt(selected_bat.tour, i, j)
+                best_tour = two_opt(
+                    selected_bat.tour,
+                    i,
+                    j,
+                )
                 best_cost = candidate_cost
 
     return best_tour, best_cost
@@ -260,9 +250,6 @@ def accept_solution(
     )
 
 
-import math
-
-
 def update_bat_parameters(
     bat: Bat,
     iteration: int,
@@ -278,8 +265,6 @@ def update_bat_parameters(
     )
 
 
-
-
 def calculate_two_opt_delta(
     tour: Sequence[int],
     distances: Sequence[Sequence[float]],
@@ -289,7 +274,11 @@ def calculate_two_opt_delta(
     """Calculate the cost change of a 2-opt move for symmetric TSP."""
 
     n = len(tour)
-        # Reversing the entire tour does not change its cost.
+
+    if not (0 <= i < j < n):
+        raise ValueError("Invalid 2-opt positions.")
+
+    # Reversing the entire tour does not change its cost.
     if i == 0 and j == n - 1:
         return 0
 
