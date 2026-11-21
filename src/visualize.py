@@ -63,53 +63,67 @@ def plot_convergence(
 
 def plot_comparison(
     summary_path: str = "data/results/dba_eil51_summary.csv",
+    ga_summary_path: str = "data/results/ga_eil51_summary.csv",
     nearest_neighbor_cost: float = 482,
     output_path: str = "data/results/comparison_eil51.png",
     show: bool = True,
 ) -> None:
-    """Compare Multi-start NN and DBA experimental results."""
+    """Compare DBA, GA and Multi-start NN on EIL51."""
 
-    summary_file = Path(summary_path)
+    def read_summary(path):
+        summary_file = Path(path)
 
-    if not summary_file.exists():
-        raise FileNotFoundError(
-            f"Summary file not found: {summary_file}"
-        )
+        if not summary_file.exists():
+            raise FileNotFoundError(
+                f"Summary file not found: {summary_file}"
+            )
 
-    with summary_file.open(
-        "r",
-        newline="",
-        encoding="utf-8-sig",
-    ) as file:
-        reader = csv.DictReader(file)
-        summary = {
-            row["Metric"]: float(row["Value"])
-            for row in reader
-        }
+        with summary_file.open(
+            "r",
+            newline="",
+            encoding="utf-8-sig",
+        ) as file:
+            reader = csv.DictReader(file)
+            return {
+                row["Metric"]: float(row["Value"])
+                for row in reader
+            }
 
-    if "best" not in summary or "mean" not in summary:
-        raise ValueError("Summary CSV must contain best and mean.")
+    dba = read_summary(summary_path)
+    ga = read_summary(ga_summary_path)
+
+    for name, summary in [("DBA", dba), ("GA", ga)]:
+        if "best" not in summary or "mean" not in summary:
+            raise ValueError(
+                f"{name} summary must contain best and mean."
+            )
 
     labels = [
         "Multi-start NN",
         "DBA Mean",
         "DBA Best",
+        "GA Mean",
+        "GA Best",
     ]
 
     costs = [
         nearest_neighbor_cost,
-        summary["mean"],
-        summary["best"],
+        dba["mean"],
+        dba["best"],
+        ga["mean"],
+        ga["best"],
     ]
 
-    plt.figure(figsize=(9, 6))
+    plt.figure(figsize=(10, 6))
 
-    bars = plt.bar(labels, costs, width=0.55)
+    bars = plt.bar(labels, costs, width=0.6)
 
-    plt.title("DBA vs Multi-start Nearest Neighbor on eil51")
+    plt.title("DBA vs GA vs Multi-start NN on EIL51")
     plt.xlabel("Algorithm")
     plt.ylabel("Tour Cost")
     plt.grid(axis="y", linestyle="--", alpha=0.5)
+
+    plt.xticks(rotation=10)
 
     for bar, cost in zip(bars, costs):
         plt.text(

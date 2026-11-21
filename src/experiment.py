@@ -153,30 +153,46 @@ def calculate_gap(
     )
 
 
+
 def save_gap_results(
     summary_path: str = "data/results/dba_eil51_summary.csv",
+    ga_summary_path: str = "data/results/ga_eil51_summary.csv",
     nearest_neighbor_cost: float = 482,
     reference_cost: float = 426,
     output_path: str = "data/results/gap_eil51.csv",
 ) -> None:
-    """Save algorithm costs and percentage gaps to CSV."""
+    """Save DBA, GA and NN costs with percentage gaps."""
 
-    with open(
-        summary_path,
-        "r",
-        newline="",
-        encoding="utf-8-sig",
-    ) as file:
-        reader = csv.DictReader(file)
-        summary = {
-            row["Metric"]: float(row["Value"])
-            for row in reader
-        }
+    def read_summary(path: str) -> dict:
+        summary_file = Path(path)
 
+        if not summary_file.exists():
+            raise FileNotFoundError(
+                f"Summary file not found: {summary_file}"
+            )
+
+        with summary_file.open(
+            "r",
+            newline="",
+            encoding="utf-8-sig",
+        ) as file:
+            reader = csv.DictReader(file)
+            return {
+                row["Metric"]: float(row["Value"])
+                for row in reader
+            }
+
+    # Read DBA and GA summary files.
+    dba_summary = read_summary(summary_path)
+    ga_summary = read_summary(ga_summary_path)
+
+    # Prepare comparison data.
     rows = [
         ("Multi-start NN", nearest_neighbor_cost),
-        ("DBA Mean", summary["mean"]),
-        ("DBA Best", summary["best"]),
+        ("DBA Mean", dba_summary["mean"]),
+        ("DBA Best", dba_summary["best"]),
+        ("GA Mean", ga_summary["mean"]),
+        ("GA Best", ga_summary["best"]),
         ("Optimal Reference", reference_cost),
     ]
 
@@ -200,7 +216,10 @@ def save_gap_results(
             writer.writerow([
                 algorithm,
                 cost,
-                round(calculate_gap(cost, reference_cost), 2),
+                round(
+                    calculate_gap(cost, reference_cost),
+                    2,
+                ),
             ])
 
     print(f"Gap results saved to: {output_file}")
